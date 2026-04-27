@@ -183,7 +183,7 @@ def generate_launch_description():
         executable='static_transform_publisher',
         name='rslidar_head_to_base_link_tf',
         parameters=[{'use_sim_time': DEFAULT_USE_SIM_TIME}],
-        arguments=['-0.36615', '0', '0', '0', str(deg_to_rad(0)), '0', 'rslidar_head', ns_base_link_frame],
+        arguments=['0', '0', '-0.36615', '0.0', str(deg_to_rad(-90)), '0', 'rslidar_head', ns_base_link_frame],
         output='screen'
     )
     ld.add_action(rslidar_head_to_base_link_tf)
@@ -194,7 +194,7 @@ def generate_launch_description():
         executable='static_transform_publisher',
         name='rslidar_head_to_rslidar_tail_tf',
         parameters=[{'use_sim_time': DEFAULT_USE_SIM_TIME}],
-        arguments=['-0.7323', '0', '0.0', '0', str(deg_to_rad(0)), '0', 'rslidar_head', 'rslidar_tail'],
+        arguments=['0', '0', '-0.7323', str(deg_to_rad(180)), str(deg_to_rad(180)), str(deg_to_rad(0)), 'rslidar_head', 'rslidar_tail'],
         output='screen'
     )
     ld.add_action(rslidar_head_to_rslidar_tail_tf)
@@ -231,7 +231,7 @@ def generate_launch_description():
     ld.add_action(declare_rviz_config_path_cmd)
     ld.add_action(declare_map_file_path_cmd)
 
-    ld.add_action(fast_lio_node)
+    # ld.add_action(fast_lio_node)
     # ld.add_action(rviz_node)
 
     return ld
