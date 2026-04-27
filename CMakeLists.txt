@@ -62,7 +62,6 @@ find_package(tf2_ros REQUIRED)
 find_package(tf2_eigen REQUIRED)
 # pcl_ros is not needed in ROS2, PCL is used directly
 find_package(pcl_conversions REQUIRED)
-find_package(livox_ros_driver2 REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
 set(dependencies
@@ -77,7 +76,6 @@ set(dependencies
   tf2_ros
   tf2_eigen
   pcl_conversions
-  livox_ros_driver2
 )
 
 # Thirdparty libraries
@@ -89,6 +87,8 @@ message(STATUS "PCL: ${PCL_INCLUDE_DIRS}")
 
 set(msg_files
   "msg/Pose6D.msg"
+  "msg/CustomPoint.msg"
+  "msg/CustomMsg.msg"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}
