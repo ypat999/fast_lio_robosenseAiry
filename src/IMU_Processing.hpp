@@ -165,6 +165,7 @@ void ImuProcess::IMU_init(const MeasureGroup &meas, esekfom::esekf<state_ikfom, 
    ** 2. normalize the acceleration measurenments to unit gravity **/
   
   V3D cur_acc, cur_gyr;
+  M3D R_IMU_to_Lidar = Lidar_R_wrt_IMU.transpose();
   
   if (b_first_frame_)
   {
@@ -173,8 +174,10 @@ void ImuProcess::IMU_init(const MeasureGroup &meas, esekfom::esekf<state_ikfom, 
     b_first_frame_ = false;
     const auto &imu_acc = meas.imu.front()->linear_acceleration;
     const auto &gyr_acc = meas.imu.front()->angular_velocity;
-    mean_acc << imu_acc.x, imu_acc.y, imu_acc.z;
-    mean_gyr << gyr_acc.x, gyr_acc.y, gyr_acc.z;
+    V3D acc_imu(imu_acc.x, imu_acc.y, imu_acc.z);
+    V3D gyr_imu(gyr_acc.x, gyr_acc.y, gyr_acc.z);
+    mean_acc = R_IMU_to_Lidar * acc_imu;
+    mean_gyr = R_IMU_to_Lidar * gyr_imu;
     first_lidar_time = meas.lidar_beg_time;
   }
 
@@ -182,8 +185,10 @@ void ImuProcess::IMU_init(const MeasureGroup &meas, esekfom::esekf<state_ikfom, 
   {
     const auto &imu_acc = imu->linear_acceleration;
     const auto &gyr_acc = imu->angular_velocity;
-    cur_acc << imu_acc.x, imu_acc.y, imu_acc.z;
-    cur_gyr << gyr_acc.x, gyr_acc.y, gyr_acc.z;
+    V3D acc_imu(imu_acc.x, imu_acc.y, imu_acc.z);
+    V3D gyr_imu(gyr_acc.x, gyr_acc.y, gyr_acc.z);
+    cur_acc = R_IMU_to_Lidar * acc_imu;
+    cur_gyr = R_IMU_to_Lidar * gyr_imu;
 
     mean_acc      += (cur_acc - mean_acc) / N;
     mean_gyr      += (cur_gyr - mean_gyr) / N;
@@ -200,8 +205,8 @@ void ImuProcess::IMU_init(const MeasureGroup &meas, esekfom::esekf<state_ikfom, 
   
   //state_inout.rot = Eye3d; // Exp(mean_acc.cross(V3D(0, 0, -1 / scale_gravity)));
   init_state.bg  = mean_gyr;
-  init_state.offset_T_L_I = Lidar_T_wrt_IMU;
-  init_state.offset_R_L_I = Lidar_R_wrt_IMU;
+  init_state.offset_T_L_I = V3D(0, 0, 0);
+  init_state.offset_R_L_I = M3D::Identity();
   kf_state.change_x(init_state);
 
   esekfom::esekf<state_ikfom, 12, input_ikfom>::cov init_P = kf_state.get_P();
@@ -259,8 +264,8 @@ void ImuProcess::UndistortPcl(const MeasureGroup &meas, esekfom::esekf<state_ikf
   /*** sort point clouds by offset time ***/
   pcl_out = *(meas.lidar);
   sort(pcl_out.points.begin(), pcl_out.points.end(), time_list);
-  std::cout<<"[ IMU Process ]: Process lidar from "<<pcl_beg_time<<" to "<<pcl_end_time<<", " \
-           <<meas.imu.size()<<" imu msgs from "<<imu_beg_time<<" to "<<imu_end_time<<std::endl;
+  // std::cout<<"[ IMU Process ]: Process lidar from "<<pcl_beg_time<<" to "<<pcl_end_time<<", " \
+  //          <<meas.imu.size()<<" imu msgs from "<<imu_beg_time<<" to "<<imu_end_time<<std::endl;
 
   /*** Initialize IMU pose ***/
   state_ikfom imu_state = kf_state.get_x();
@@ -270,6 +275,7 @@ void ImuProcess::UndistortPcl(const MeasureGroup &meas, esekfom::esekf<state_ikf
   /*** forward propagation at each imu point ***/
   V3D angvel_avr, acc_avr, acc_imu, vel_imu, pos_imu;
   M3D R_imu;
+  M3D R_IMU_to_Lidar = Lidar_R_wrt_IMU.transpose();
 
   double dt = 0;
 
@@ -284,12 +290,16 @@ void ImuProcess::UndistortPcl(const MeasureGroup &meas, esekfom::esekf<state_ikf
 
     if (tail_stamp < last_lidar_end_time_)    continue;
     
-    angvel_avr<<0.5 * (head->angular_velocity.x + tail->angular_velocity.x),
+    V3D angvel_imu, acc_imu_raw;
+    angvel_imu<<0.5 * (head->angular_velocity.x + tail->angular_velocity.x),
                 0.5 * (head->angular_velocity.y + tail->angular_velocity.y),
                 0.5 * (head->angular_velocity.z + tail->angular_velocity.z);
-    acc_avr   <<0.5 * (head->linear_acceleration.x + tail->linear_acceleration.x),
+    acc_imu_raw   <<0.5 * (head->linear_acceleration.x + tail->linear_acceleration.x),
                 0.5 * (head->linear_acceleration.y + tail->linear_acceleration.y),
                 0.5 * (head->linear_acceleration.z + tail->linear_acceleration.z);
+    
+    angvel_avr = R_IMU_to_Lidar * angvel_imu;
+    acc_avr = R_IMU_to_Lidar * acc_imu_raw;
 
     // fout_imu << setw(10) << head->header.stamp.toSec() - first_lidar_time << " " << angvel_avr.transpose() << " " << acc_avr.transpose() << endl;
 
@@ -364,7 +374,7 @@ void ImuProcess::UndistortPcl(const MeasureGroup &meas, esekfom::esekf<state_ikf
       
       V3D P_i(it_pcl->x, it_pcl->y, it_pcl->z);
       V3D T_ei(pos_imu + vel_imu * dt + 0.5 * acc_imu * dt * dt - imu_state.pos);
-      V3D P_compensate = imu_state.offset_R_L_I.conjugate() * (imu_state.rot.conjugate() * (R_i * (imu_state.offset_R_L_I * P_i + imu_state.offset_T_L_I) + T_ei) - imu_state.offset_T_L_I);// not accurate!
+      V3D P_compensate = imu_state.rot.conjugate() * (R_i * P_i + T_ei);
       
       // save Undistorted points and their rotation
       it_pcl->x = P_compensate(0);

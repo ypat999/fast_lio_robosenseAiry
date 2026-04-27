@@ -205,7 +205,7 @@ void pointBodyToWorld(const Matrix<T, 3, 1> &pi, Matrix<T, 3, 1> &po)
 void RGBpointBodyToWorld(PointType const * const pi, PointType * const po)
 {
     V3D p_body(pi->x, pi->y, pi->z);
-    V3D p_global(state_point.rot * (state_point.offset_R_L_I*p_body + state_point.offset_T_L_I) + state_point.pos);
+    V3D p_global(state_point.rot * p_body + state_point.pos);
 
     po->x = p_global(0);
     po->y = p_global(1);
@@ -216,7 +216,7 @@ void RGBpointBodyToWorld(PointType const * const pi, PointType * const po)
 void RGBpointBodyLidarToIMU(PointType const * const pi, PointType * const po)
 {
     V3D p_body_lidar(pi->x, pi->y, pi->z);
-    V3D p_body_imu(state_point.offset_R_L_I*p_body_lidar + state_point.offset_T_L_I);
+    V3D p_body_imu(p_body_lidar);
 
     po->x = p_body_imu(0);
     po->y = p_body_imu(1);
@@ -801,12 +801,9 @@ void h_share_model(state_ikfom &s, esekfom::dyn_share_datastruct<double> &ekfom_
     for (int i = 0; i < effct_feat_num; i++)
     {
         const PointType &laser_p  = laserCloudOri->points[i];
-        V3D point_this_be(laser_p.x, laser_p.y, laser_p.z);
-        M3D point_be_crossmat;
-        point_be_crossmat << SKEW_SYM_MATRX(point_this_be);
-        V3D point_this = s.offset_R_L_I * point_this_be + s.offset_T_L_I;
+        V3D point_this(laser_p.x, laser_p.y, laser_p.z);
         M3D point_crossmat;
-        point_crossmat<<SKEW_SYM_MATRX(point_this);
+        point_crossmat << SKEW_SYM_MATRX(point_this);
 
         /*** get the normal vector of closest surface/corner ***/
         const PointType &norm_p = corr_normvect->points[i];
@@ -817,7 +814,7 @@ void h_share_model(state_ikfom &s, esekfom::dyn_share_datastruct<double> &ekfom_
         V3D A(point_crossmat * C);
         if (extrinsic_est_en)
         {
-            V3D B(point_be_crossmat * s.offset_R_L_I.conjugate() * C); //s.rot.conjugate()*norm_vec);
+            V3D B(point_crossmat * C);
             ekfom_data.h_x.block<1, 12>(i,0) << norm_p.x, norm_p.y, norm_p.z, VEC_FROM_ARRAY(A), VEC_FROM_ARRAY(B), VEC_FROM_ARRAY(C);
         }
         else

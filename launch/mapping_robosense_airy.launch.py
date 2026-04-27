@@ -68,6 +68,17 @@ def generate_launch_description():
     
     
 
+    # 离线模式：rosbag播放
+    # from launch.actions import ExecuteProcess
+    # bag_path = '/home/ywj/slam_data/rslidar/'
+    # rosbag_player = ExecuteProcess(
+    #     cmd=['ros2', 'bag', 'play', bag_path, '--clock', '--rate', '1.0', '--loop'],
+    #     name='rosbag_player',
+    #     output='screen',
+    #     prefix=['taskset -c 4'],   # 绑定 CPU 4
+    # )
+    # ld.add_action(rosbag_player)
+
 
 
 
@@ -151,7 +162,7 @@ def generate_launch_description():
         executable='static_transform_publisher',
         name='static_transform_odom_to_camera_init',
         parameters=[{'use_sim_time': DEFAULT_USE_SIM_TIME}],
-        arguments=['0.0', '0.0', '0.0', '0.0', '0.0', '0.0', ns_odom_frame, ns_camera_init_frame],
+        arguments=['0.36615', '0.0', '0.0', '0.0', str(deg_to_rad(90)), '0.0', ns_odom_frame, ns_camera_init_frame],
         output='screen'
     )
     ld.add_action(static_transform_odom_to_camera_init)
@@ -231,7 +242,7 @@ def generate_launch_description():
     ld.add_action(declare_rviz_config_path_cmd)
     ld.add_action(declare_map_file_path_cmd)
 
-    # ld.add_action(fast_lio_node)
+    ld.add_action(fast_lio_node)
     # ld.add_action(rviz_node)
 
     return ld
