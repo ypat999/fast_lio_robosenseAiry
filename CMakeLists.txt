@@ -82,13 +82,20 @@ set(dependencies
 find_package(Eigen3 REQUIRED)
 find_package(PCL REQUIRED COMPONENTS common io)
 
+find_package(livox_ros_driver2 QUIET)
+if(livox_ros_driver2_FOUND)
+  message(STATUS "livox_ros_driver2 found, enabling Livox support")
+  set(LIVOX_SUPPORT ON)
+else()
+  message(STATUS "livox_ros_driver2 not found, disabling Livox support")
+  set(LIVOX_SUPPORT OFF)
+endif()
+
 message(Eigen: ${EIGEN3_INCLUDE_DIR})
 message(STATUS "PCL: ${PCL_INCLUDE_DIRS}")
 
 set(msg_files
   "msg/Pose6D.msg"
-  "msg/CustomPoint.msg"
-  "msg/CustomMsg.msg"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}
@@ -119,6 +126,11 @@ else()
 endif()
 
 ament_target_dependencies(fastlio_mapping ${dependencies})
+
+if(LIVOX_SUPPORT)
+  ament_target_dependencies(fastlio_mapping livox_ros_driver2)
+  target_compile_definitions(fastlio_mapping PUBLIC LIVOX_SUPPORT=1)
+endif()
 
 # ---------------- Install --------------- #
 install(TARGETS fastlio_mapping

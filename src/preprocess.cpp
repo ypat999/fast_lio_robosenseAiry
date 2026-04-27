@@ -44,11 +44,13 @@ void Preprocess::set(bool feat_en, int lid_type, double bld, int pfilt_num)
   point_filter_num = pfilt_num;
 }
 
-void Preprocess::process(const fast_lio_robosense::msg::CustomMsg::UniquePtr &msg, PointCloudXYZI::Ptr& pcl_out)
+#ifdef LIVOX_SUPPORT
+void Preprocess::process(const livox_ros_driver2::msg::CustomMsg::UniquePtr &msg, PointCloudXYZI::Ptr& pcl_out)
 {
   avia_handler(msg);
   *pcl_out = pl_surf;
 }
+#endif
 
 void Preprocess::process(const sensor_msgs::msg::PointCloud2::UniquePtr &msg, PointCloudXYZI::Ptr& pcl_out)
 {
@@ -136,7 +138,8 @@ void Preprocess::process(const sensor_msgs::msg::PointCloud2::UniquePtr &msg, Po
   *pcl_out = pl_surf;
 }
 
-void Preprocess::avia_handler(const fast_lio_robosense::msg::CustomMsg::UniquePtr &msg)
+#ifdef LIVOX_SUPPORT
+void Preprocess::avia_handler(const livox_ros_driver2::msg::CustomMsg::UniquePtr &msg)
 {
   pl_surf.clear();
   pl_corn.clear();
@@ -236,6 +239,7 @@ void Preprocess::avia_handler(const fast_lio_robosense::msg::CustomMsg::UniquePt
     }
   }
 }
+#endif
 
 void Preprocess::oust64_handler(const sensor_msgs::msg::PointCloud2::UniquePtr &msg)
 {

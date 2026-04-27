@@ -2,7 +2,10 @@
 #include <rclcpp/rclcpp.hpp>
 #include <pcl_conversions/pcl_conversions.h>
 #include <sensor_msgs/msg/point_cloud2.hpp>
-#include <fast_lio_robosense/msg/custom_msg.hpp>
+
+#ifdef LIVOX_SUPPORT
+#include <livox_ros_driver2/msg/custom_msg.hpp>
+#endif
 
 using namespace std;
 
@@ -162,7 +165,9 @@ class Preprocess
   Preprocess();
   ~Preprocess();
   
-  void process(const fast_lio_robosense::msg::CustomMsg::UniquePtr &msg, PointCloudXYZI::Ptr &pcl_out);
+#ifdef LIVOX_SUPPORT
+  void process(const livox_ros_driver2::msg::CustomMsg::UniquePtr &msg, PointCloudXYZI::Ptr &pcl_out);
+#endif
   void process(const sensor_msgs::msg::PointCloud2::UniquePtr &msg, PointCloudXYZI::Ptr &pcl_out);
   void process(const sensor_msgs::msg::PointCloud2::UniquePtr &msg, PointCloudXYZI::Ptr &pcl_out,
                int i_sub_cloud, int num_sub_cloud, double & start_time, double & end_time);
@@ -179,7 +184,9 @@ class Preprocess
   // ros::Publisher pub_full, pub_surf, pub_corn;
 
 private:
-  void avia_handler(const fast_lio_robosense::msg::CustomMsg::UniquePtr &msg);
+#ifdef LIVOX_SUPPORT
+  void avia_handler(const livox_ros_driver2::msg::CustomMsg::UniquePtr &msg);
+#endif
   void oust64_handler(const sensor_msgs::msg::PointCloud2::UniquePtr &msg);
   void robosenseM1_handler(const sensor_msgs::msg::PointCloud2::UniquePtr &msg,
                            int i_sub_cloud, int num_sub_cloud, double & start_time, double & end_time);
