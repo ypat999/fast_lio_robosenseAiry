@@ -24,7 +24,7 @@ def generate_launch_description():
         from global_config import (
             ONLINE_LIDAR, DEFAULT_BAG_PATH, DEFAULT_RELIABILITY_OVERRIDE,
             DEFAULT_USE_SIM_TIME, MANUAL_BUILD_MAP, BUILD_TOOL, RECORD_ONLY,
-            NAV2_DEFAULT_PARAMS_FILE, LIVOX_MID360_CONFIG, LIVOX_MID360_CONFIG_NO_TILT, DEFAULT_NAMESPACE,
+            NAV2_DEFAULT_PARAMS_FILE, LIVOX_MID360_CONFIG, DEFAULT_NAMESPACE,
             SUPER_LIO_LIDAR_X, SUPER_LIO_LIDAR_Z,SUPER_LIO_LIDAR_TILT_ANGLE
         )
     except ImportError as e:
@@ -38,7 +38,7 @@ def generate_launch_description():
         BUILD_TOOL = 'octomap_server'
         RECORD_ONLY = False
         NAV2_DEFAULT_PARAMS_FILE = '/home/ztl/dog_slam/LIO-SAM_MID360_ROS2_PKG/ros2/src/nav2_dog_slam/config/nav2_params.yaml'
-        LIVOX_MID360_CONFIG_NO_TILT = ''
+        LIVOX_MID360_CONFIG = ''
         DEFAULT_NAMESPACE = ''
         SUPER_LIO_LIDAR_X = -0.1
         SUPER_LIO_LIDAR_Z = -0.1
